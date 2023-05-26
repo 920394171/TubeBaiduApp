@@ -1,0 +1,131 @@
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:tools="http://schemas.android.com/tools"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    tools:context=".fragments.MapAnnotationFragment">-->
+
+<!--    <com.baidu.mapapi.map.MapView-->
+<!--        android:id="@+id/bmapView"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_alignParentTop="true"-->
+<!--        android:layout_alignParentLeft="true"-->
+<!--        android:layout_alignParentStart="true" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/locateBtn"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentRight="true"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:layout_marginRight="25dp"-->
+<!--        android:layout_marginBottom="100dp"-->
+<!--        android:text="locate" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/cleanBtn"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentRight="true"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:layout_marginRight="25dp"-->
+<!--        android:layout_marginBottom="160dp"-->
+<!--        android:text="clear" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/popBtn"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentRight="true"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:layout_marginRight="25dp"-->
+<!--        android:layout_marginBottom="220dp"-->
+<!--        android:text="pop" />-->
+
+<!--    <Button-->
+<!--        android:id="@+id/beginBtn"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentRight="true"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:layout_marginRight="25dp"-->
+<!--        android:layout_marginBottom="280dp"-->
+<!--        android:text="begin" />-->
+
+<!--    <TextView-->
+<!--        android:id="@+id/state"-->
+<!--        android:layout_width="fill_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:lines="2"-->
+<!--        android:text="点击、长按、双击地图以获取经纬度"-->
+<!--        android:textColor="#FFF"-->
+<!--        android:textSize="16sp"-->
+<!--        android:layout_marginTop="20dp"/>-->
+
+<!--</FrameLayout>-->
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.baidu.mapapi.map.MapView
+        android:id="@+id/bmapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <Button
+        android:id="@+id/locateBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:text="locate" />
+
+    <Button
+        android:id="@+id/cleanBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="96dp"
+        android:layout_marginEnd="16dp"
+        android:text="clear" />
+
+    <Button
+        android:id="@+id/popBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="144dp"
+        android:layout_marginEnd="16dp"
+        android:text="pop" />
+
+    <Button
+        android:id="@+id/beginBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="192dp"
+        android:layout_marginEnd="16dp"
+        android:text="begin" />
+
+    <Button
+        android:id="@+id/adjustBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="240dp"
+        android:layout_marginEnd="16dp"
+        android:text="adjust" />
+
+    <TextView
+        android:id="@+id/state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="16dp"
+        android:lines="2"
+        android:text="点击、长按、双击地图以获取经纬度"
+        android:textColor="#FFF"
+        android:textSize="16sp" />
+</FrameLayout>

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">TubeBaiduApp</string>
+    <string name="panoSpeakInfo">111</string>
+    <string name="BUTTON_END_RECORDING">begin</string>
+    <string name="BUTTON_RECORDING">finish!</string>
+    <string name="nowMap">OK</string>
+    <string name="nowPano">BACK</string>
+</resources>
