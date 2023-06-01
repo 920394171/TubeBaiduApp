@@ -9,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.android.buaa.tubebaiduapp.R
@@ -32,6 +31,8 @@ import java.io.IOException
 
 class MapAnnotationFragment : Fragment() {
 
+    private val markerIdString: String = "markerId"
+    private var markerNum: Int = 0
     private var textureIndex: Int = 0
     private lateinit var adjustBtn: Button
     private lateinit var clientModel: ClientModel
@@ -48,31 +49,31 @@ class MapAnnotationFragment : Fragment() {
     private lateinit var mStateBar: TextView
     private lateinit var mBaiduMap: BaiduMap
 
-    private var beginLatLng: LatLng? = null
-    private var endLatLng: LatLng? = null
+//    private var beginLatLng: LatLng? = null
+//    private var endLatLng: LatLng? = null
 
     //    private var selectedMarker: MarkerOptions? = null
-    private var pointMarkers = mutableListOf<MarkerOptions>()
-    private var polylineMarkers = mutableListOf<PolylineOptions>()
+//    private var pointMarkers = mutableListOf<MarkerOptions>()
+//    private var polylineMarkers = mutableListOf<PolylineOptions>()
 
     private lateinit var nowLocationMsg: MyLocationData
     private val mbitmap = BitmapDescriptorFactory.fromResource(R.drawable.icon_marka)
 
     private var isRecording: Boolean = false
 
-    private val allNodes = mutableListOf<Node>()
-    private val firstNodesIndexOfTubes: ArrayList<Int> = ArrayList()
-    private val polylinePoints: ArrayList<LatLng> = ArrayList()
-    private val pointsForSinglePolyline: ArrayList<LatLng> = ArrayList()
-    private val pointsForAllPolyline: ArrayList<ArrayList<LatLng>> = ArrayList()
+//    private val allNodes = mutableListOf<Node>()
+//    private val firstNodesIndexOfTubes: ArrayList<Int> = ArrayList()
+//    private val polylinePoints: ArrayList<LatLng> = ArrayList()
+//    private val pointsForSinglePolyline: ArrayList<LatLng> = ArrayList()
+//    private val pointsForAllPolyline: ArrayList<ArrayList<LatLng>> = ArrayList()
 
     // 顺序节点latlng信息
 //    private var overlaysArray: ArrayList<Overlay> = ArrayList()
 
     // 管道tube和节点node列表
-    private var nodes: ArrayList<Node> = ArrayList()
-    private var tube: Tube = Tube()
-    private var autoTubeId = 0
+    private var nodes: ArrayList<ArrayList<Node>> = ArrayList()
+    private var tubes: ArrayList<Tube> = ArrayList()
+    private var autoTubeIds: MutableMap<Int, Int> = HashMap()
 
     companion object {
         fun newInstance() = MapAnnotationFragment()
@@ -101,31 +102,59 @@ class MapAnnotationFragment : Fragment() {
         // map刷新
         viewModel.refreshMapAnnotationLiveData.observe(viewLifecycleOwner) {
             mBaiduMap.clear()
-            pointMarkers.forEach { mBaiduMap.addOverlay(it) }
-            polylineMarkers.forEach { mBaiduMap.addOverlay(it) }
-            val stringBuilder = StringBuilder()
-            for (i in 0 until nodes.size) {
-                stringBuilder.append("lat:").append(nodes[i].latLng.latitude).append("--lng:").append(nodes[i].latLng.longitude).append("\n")
-            }
-            Log.e(TAG, "onCreateView: markers={${stringBuilder.toString()}}")
+
+            logNodes()
+
+            refreshMarkersAndPolyline()
+//            pointMarkers.forEach { mBaiduMap.addOverlay(it) }
+//            polylineMarkers.forEach { mBaiduMap.addOverlay(it) }
         }
 
         // 设置marker点击事件
         mBaiduMap.setOnMarkerClickListener { marker ->
-            if (viewModel.isAdjustingMarkerLiveData.value == true) {
-                viewModel.selectedMarkerLiveData.value = pointMarkers.find { it.position == marker.position }
-                viewModel.selectedNodeLiveData.value = nodes.find { it.latLng == marker.position }
+            Log.e(TAG, "onCreateView: 123321")
+            Log.e(TAG, "OnMarkerClick: marker.markerId:${marker.extraInfo.getInt(markerIdString)}")
 
-                viewModel.selectedPolylineMarkerLiveData.value = polylineMarkers.find { polyline ->
-                    (polyline.points.find { it == marker.position })?.let { it ->
-                        viewModel.selectedPolylineNodeIndexLiveData.value = polyline.points.indexOf(it)
-                    }
-                    polyline.points.find { it == marker.position } != null
+            if (viewModel.isAdjustingMarkerLiveData.value == true) {
+                val markerId = marker.extraInfo.getInt(markerIdString).toString()
+                Log.e(TAG, "OnMarkerClick: marker.markerId:$markerId")
+//                viewModel.selectedMarkerLiveData.value = pointMarkers.find { it.position == marker.position }
+//                viewModel.selectedMarkerLiveData.value = pointMarkers.find { it.extraInfo.get(markerIdString) == markerId }
+                nodes.forEach { nodeList ->
+                    viewModel.selectedNodeLiveData.value = nodeList.find { it.extraInfo?.getInt(markerIdString) == marker.extraInfo.getInt(markerIdString) }
                 }
+
+                nodes.forEach { nodeList ->
+                    val node = nodeList.find {
+                        it.latLng == marker.position
+                    }
+                    if (node != null) {
+                        viewModel.selectedNodeLiveData.value = node
+                        return@forEach
+                    }
+                }
+
+//                viewModel.selectedNodeLiveData.value = nodes.find { it.latLng == marker.position }
+
+//                viewModel.selectedPolylineMarkerLiveData.value = polylineMarkers.find { polyline ->
+//                    (polyline.points.find { it == marker.position })?.let { it ->
+//                        viewModel.selectedPolylineNodeIndexLiveData.value = polyline.points.indexOf(it)
+//                    }
+//                    polyline.points.find { it == marker.position } != null
+//                }
                 return@setOnMarkerClickListener true
             }
             false
         }
+
+//        // 设置marker点击事件
+//        mBaiduMap.setOnMarkerClickListener { marker ->
+//            if (viewModel.isAdjustingMarkerLiveData.value == true) {
+//                Log.e(TAG, "onCreateView: 11123")
+//                return@setOnMarkerClickListener true
+//            }
+//            false
+//        }
 
         // 定位按钮
         locateBtn = view.findViewById(R.id.locateBtn)
@@ -142,10 +171,8 @@ class MapAnnotationFragment : Fragment() {
         cleanBtn = view.findViewById(R.id.cleanBtn)
         cleanBtn.setOnClickListener {
             mBaiduMap.clear()
-            pointMarkers.clear()
             nodes.clear()
-            beginLatLng = null
-            endLatLng = null
+            tubes.clear()
         }
 
         // pop按钮
@@ -160,12 +187,12 @@ class MapAnnotationFragment : Fragment() {
             isRecording = !isRecording
             if (isRecording) {
                 beginBtn.text = resources.getString(R.string.BUTTON_RECORDING)
-                if (nodes.isNotEmpty()) {
-                    nodes.clear()
-                }
-                tube.clear()
-                pointsForSinglePolyline.clear()
-                pointsForAllPolyline.add(ArrayList())
+//                if (nodes.isNotEmpty()) {
+//                    nodes.clear()
+//                }
+//                tubes.clear()
+                tubes.add(Tube())
+                nodes.add(ArrayList<Node>())
                 showTubeInputDialog()
             } else {
                 beginBtn.text = resources.getString(R.string.BUTTON_END_RECORDING)
@@ -174,10 +201,8 @@ class MapAnnotationFragment : Fragment() {
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
-                updatePolyline()
+                refreshMarkersAndPolyline()
                 refreshTextureIndexByMod100Add()
-                endLatLng = null
-                beginLatLng = null
             }
         }
 
@@ -198,6 +223,31 @@ class MapAnnotationFragment : Fragment() {
         }
 
         return view
+    }
+
+    private fun refreshMarkersAndPolyline() {
+        // 刷新线段
+        updatePolyline()
+
+        // 刷新marker
+        nodes.forEach { nodeList ->
+
+            nodeList.forEach {
+                val pointMarker: MarkerOptions =
+                    MarkerOptions().position(it.latLng).icon(mbitmap).draggable(true).extraInfo(it.extraInfo)
+                mBaiduMap.addOverlay(pointMarker)
+            }
+        }
+    }
+
+    private fun logNodes() {
+        val sb = StringBuffer()
+        nodes.forEach { nodeList->
+            nodeList.forEach {
+                sb.append(it.nodeId).append("--").append(it.latLng.latitude).append("--").append(it.latLng.longitude).append("\n")
+            }
+        }
+        Log.d(TAG, "nodes: ${sb.toString()}")
     }
 
 
@@ -234,6 +284,7 @@ class MapAnnotationFragment : Fragment() {
                 node.setNodeType(spinner.selectedItem.toString())
                 Log.e(TAG, "showNodeInputDialog: nodeType:${spinner.selectedItem.toString()}")
                 node.nodeMsg = editText.text.toString()
+                node.nodeId = tubes[tubes.size - 1].tubeId
                 Toast.makeText(requireActivity().applicationContext, "提交成功！", Toast.LENGTH_SHORT).show()
             }
 
@@ -276,9 +327,12 @@ class MapAnnotationFragment : Fragment() {
 
             // 设置完成按钮
             builder.setPositiveButton("完成") { dialog: DialogInterface?, which: Int ->
-                tube.tubeName = tubeName.text.toString()
-                tube.tubeMsg = tubeMsg.text.toString()
-                tube.tubeTypeStr = tubeType.text.toString()
+                tubes[tubes.size - 1].let { tube ->
+                    tube.tubeName = tubeName.text.toString()
+                    tube.tubeMsg = tubeMsg.text.toString()
+                    tube.tubeTypeStr = tubeType.text.toString()
+                    tube.tubeId = tubes.size
+                }
                 Toast.makeText(requireActivity().applicationContext, "提交成功！", Toast.LENGTH_SHORT).show()
             }
 
@@ -292,87 +346,97 @@ class MapAnnotationFragment : Fragment() {
 
     @Throws(IOException::class)
     private fun uploadAnchors() {
-        // 先传tube，得到autoTubeId，再传nodes
-        val tubeParamsMap = HashMap<String, String?>()
-        tubeParamsMap["Tube_name"] = tube.tubeName
-        tubeParamsMap["Tube_type"] = tube.tubeTypeStr
-        tubeParamsMap["Surrounding_message"] = tube.tubeMsg
-        Log.e(TAG, "new PostTubeTask().execute(tubeParamsMap);")
-        val call = clientModel.postTube(tubeParamsMap)
-        call.enqueue(object : Callback<ResponseBody> {
-            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                Log.d(TAG, response.message())
-                val responseStr: String
-                try {
-                    responseStr = response.body()?.string() ?: ""
-                    Log.d(
-                        TAG,
-                        "-------------------------TUBE MSG!!!!-------------------\n" +
-                                responseStr +
-                                "-------------------------MSG!!!!-------------------"
-                    )
-                    autoTubeId = responseStr.toInt()
-                    Log.d(TAG, "autoTubeId = $autoTubeId")
-
-                    // 传nodes
-                    uploadNodes()
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-            }
-
-            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                Log.d(TAG, "onFailure: MSG Failure!")
-            }
-        })
-//        new PostTubeTask().execute(tubeParamsMap);
-    }
-
-    private fun uploadNodes() {
-        for (node: Node in nodes) {
-            val nodeParamsMap = HashMap<String, String>()
-            nodeParamsMap["Node_index"] = nodes.indexOf(node).toString()
-            nodeParamsMap["Tube_id"] = autoTubeId.toString()
-            nodeParamsMap["Latitude"] = node.latLng.latitude.toString()
-            nodeParamsMap["Longitude"] = node.latLng.longitude.toString()
-            nodeParamsMap["Altitude"] = node.altitude.toString()
-            nodeParamsMap["Node_type"] = node.nodeType.toString()
-            nodeParamsMap["Surrounding_message"] = node.nodeMsg ?: ""
-            val callNode: Call<ResponseBody> = clientModel.postNode(nodeParamsMap)
-            callNode.enqueue(object : Callback<ResponseBody> {
+        tubes.forEach { tube ->
+            // 先传tube，得到autoTubeId，再传nodes
+            val tubeParamsMap = HashMap<String, String?>()
+            tubeParamsMap["Tube_name"] = tube.tubeName
+            tubeParamsMap["Tube_type"] = tube.tubeTypeStr
+            tubeParamsMap["Surrounding_message"] = tube.tubeMsg
+            Log.e(TAG, "new PostTubeTask().execute(tubeParamsMap);")
+            val call = clientModel.postTube(tubeParamsMap)
+            call.enqueue(object : Callback<ResponseBody> {
                 override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     Log.d(TAG, response.message())
-                    response.body()?.let {
+                    val responseStr: String
+                    try {
+                        responseStr = response.body()?.string() ?: ""
                         Log.d(
                             TAG,
-                            "-------------------------NODE MSG!!!!-------------------\n" +
-                                    it.string() +
+                            "-------------------------TUBE MSG!!!!-------------------\n" +
+                                    responseStr +
                                     "-------------------------MSG!!!!-------------------"
                         )
+//                        autoTubeIds.add(responseStr.toInt())
+                        autoTubeIds[tube.tubeId!!] = responseStr.toInt()
+                        Log.d(TAG, "autoTubeId = ${autoTubeIds[tube.tubeId!!]}")
+
+                        // 传nodes
+                        uploadNodes()
+                    } catch (e: IOException) {
+                        e.printStackTrace()
                     }
                 }
 
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                    // 处理请求失败情况
+                    Log.d(TAG, "onFailure: MSG Failure!")
                 }
             })
+//        new PostTubeTask().execute(tubeParamsMap);
+        }
+    }
+
+    private fun uploadNodes() {
+        nodes.forEach { nodeList ->
+            for (node: Node in nodeList) {
+                val nodeParamsMap = HashMap<String, String>()
+                nodeParamsMap["Node_index"] = nodeList.indexOf(node).toString()
+                nodeParamsMap["Tube_id"] = autoTubeIds[node.nodeId!!].toString()
+                nodeParamsMap["Latitude"] = node.latLng.latitude.toString()
+                nodeParamsMap["Longitude"] = node.latLng.longitude.toString()
+                nodeParamsMap["Altitude"] = node.altitude.toString()
+                nodeParamsMap["Node_type"] = node.nodeType.toString()
+                nodeParamsMap["Surrounding_message"] = node.nodeMsg ?: ""
+                val callNode: Call<ResponseBody> = clientModel.postNode(nodeParamsMap)
+                callNode.enqueue(object : Callback<ResponseBody> {
+                    override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                        Log.d(TAG, response.message())
+                        response.body()?.let {
+                            Log.d(
+                                TAG,
+                                "-------------------------NODE MSG!!!!-------------------\n" +
+                                        it.string() +
+                                        "-------------------------MSG!!!!-------------------"
+                            )
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                        // 处理请求失败情况
+                    }
+                })
+            }
         }
     }
 
     private fun popOoaArray() {
-        if (pointMarkers.isNotEmpty()) {
-            pointMarkers.removeAt(pointMarkers.size - 1)
-            refreshMapMarkers()
-//            mBaiduMap.removeOverLays(arrayListOf(overlaysArray.removeAt(overlaysArray.size - 1)))
-        }
         if (nodes.isNotEmpty()) {
-            nodes.removeAt(nodes.size - 1)
+//            nodes.removeAt(nodes.size - 1)
+            nodes[nodes.size - 1].removeLast()
         }
+        refreshMapMarkers()
     }
 
     private fun refreshMapMarkers() {
         mBaiduMap.clear()
-        pointMarkers.forEach { mBaiduMap.addOverlay(it) }
+
+        nodes.forEach { nodeList ->
+            nodeList.forEach {
+                val ooA = MarkerOptions().position(mCurrentPointPlace).icon(mbitmap).draggable(true).extraInfo(it.extraInfo)
+                mBaiduMap.addOverlay(ooA)
+            }
+        }
+
+//        pointMarkers.forEach { mBaiduMap.addOverlay(it) }
     }
 
     /**
@@ -380,19 +444,21 @@ class MapAnnotationFragment : Fragment() {
      */
     private fun updateMapState() {
         if (!isRecording) return
-        if (endLatLng == null) {
-            endLatLng = mCurrentPointPlace
-        } else {
-            beginLatLng = endLatLng
-            endLatLng = mCurrentPointPlace
-        }
+//        if (endLatLng == null) {
+//            endLatLng = mCurrentPointPlace
+//        } else {
+//            beginLatLng = endLatLng
+//            endLatLng = mCurrentPointPlace
+//        }
 
-        pointsForSinglePolyline.add(mCurrentPointPlace)
-        pointsForAllPolyline[pointsForAllPolyline.size - 1].add(mCurrentPointPlace)
+//        pointsForSinglePolyline.add(mCurrentPointPlace)
+//        pointsForAllPolyline[pointsForAllPolyline.size - 1].add(mCurrentPointPlace)
 
         val state: String = String.format("$mTouchType,当前经度： %f 当前纬度：%f", mCurrentPointPlace.longitude, mCurrentPointPlace.latitude)
-        val ooA = MarkerOptions().position(mCurrentPointPlace).icon(mbitmap).draggable(true)
-        pointMarkers.add(ooA)
+        val bundle = Bundle()
+
+        bundle.putInt(markerIdString, ++markerNum)
+        val ooA = MarkerOptions().position(mCurrentPointPlace).icon(mbitmap).draggable(true).extraInfo(bundle)
         mBaiduMap.addOverlay(ooA)
         mStateBar.text = state
 
@@ -402,39 +468,45 @@ class MapAnnotationFragment : Fragment() {
         node.latLng = mCurrentPointPlace
         node.altitude = 0.0
         node.nodeIndex = nodes.size + 1
-        nodes.add(node)
+        node.extraInfo = bundle
+//        nodes.add(node)
+        nodes[nodes.size - 1].add(node)
     }
 
-    private fun updatePolyline(){
+    private fun updatePolyline() {
         //构建折线点坐标
-        val points: MutableList<LatLng> = ArrayList()
-        pointsForSinglePolyline.forEach { points.add(it) }
+//        val points: MutableList<LatLng> = ArrayList()
+//        pointsForSinglePolyline.forEach { points.add(it) }
 
-        //添加纹理图片
-        val textureList: MutableList<BitmapDescriptor> = ArrayList()
-        val goAheadTextureBitmap = BitmapFactory.decodeResource(resources, R.drawable.goahead)
-        val goAheadTexture = BitmapDescriptorFactory.fromBitmap(goAheadTextureBitmap)
-        textureList.add(goAheadTexture)
+        nodes.forEach { nodeList ->
+            val points: MutableList<LatLng> = ArrayList()
+            nodeList.forEach { points.add(it.latLng) }
+            //添加纹理图片
+            val textureList: MutableList<BitmapDescriptor> = ArrayList()
+            val goAheadTextureBitmap = BitmapFactory.decodeResource(resources, R.drawable.goahead)
+            val goAheadTexture = BitmapDescriptorFactory.fromBitmap(goAheadTextureBitmap)
+            textureList.add(goAheadTexture)
 
-        //添加纹理索引
-        val indexList: MutableList<Int> = ArrayList()
-        indexList.add(textureIndex)
+            //添加纹理索引
+            val indexList: MutableList<Int> = ArrayList()
+            indexList.add(textureIndex)
 
 
-        //设置折线的属性
-        val mOverlayOptions: PolylineOptions = PolylineOptions()
-            .width(20)
-            .dottedLine(true)
-            .points(points)
+            //设置折线的属性
+            val mOverlayOptions: PolylineOptions = PolylineOptions()
+                .width(20)
+                .dottedLine(true)
+                .points(points)
 //                .customTextureList(textureList)
 //                .textureIndex(indexList) //设置纹理列表
-        polylineMarkers.add(mOverlayOptions)
 
-        //在地图上绘制折线
-        //mPloyline 折线对象
-        val mPolyline = mBaiduMap.addOverlay(mOverlayOptions)
+            //在地图上绘制折线
+            //mPloyline 折线对象
+            mBaiduMap.addOverlay(mOverlayOptions)
+        }
+
+
     }
-
 
 
     /**

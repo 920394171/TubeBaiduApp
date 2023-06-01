@@ -1,5 +1,6 @@
 package com.android.buaa.tubebaiduapp.classes
 
+import android.os.Bundle
 import com.baidu.mapapi.model.LatLng
 
 
@@ -9,6 +10,9 @@ class Node {
     var nodeType = 0
     var nodeMsg: String? = null
     var nodeIndex = 0
+    var nodeId: Int? = null
+    var extraInfo: Bundle? = null
+
 
     fun setLatLng(latLng: LatLng): Node {
         this.latLng = latLng

@@ -22,12 +22,8 @@ class MapViewModel : ViewModel() {
     val mCurrentPointPlaceLiveData:MutableLiveData<LatLng> = MutableLiveData()
 
     val isAdjustingMarkerLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
-    val selectedMarkerLiveData: MutableLiveData<MarkerOptions> = MutableLiveData()
+//    val selectedMarkerLiveData: MutableLiveData<MarkerOptions> = MutableLiveData()
     val selectedNodeLiveData: MutableLiveData<Node> = MutableLiveData()
-
-    val selectedPolylineMarkerLiveData: MutableLiveData<PolylineOptions> = MutableLiveData()
-    val selectedPolylineNodeIndexLiveData: MutableLiveData<Int> = MutableLiveData()
-
 
     val refreshMapAnnotationLiveData:MutableLiveData<Boolean> = MutableLiveData(true)
     val needLocatePanoLiveData:MutableLiveData<Boolean> = MutableLiveData(true)

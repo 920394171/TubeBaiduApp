@@ -215,9 +215,12 @@ class MainActivity : AppCompatActivity(), OnSendPointListener {
                     MotionEvent.ACTION_DOWN -> {
                         // 按钮被按下，设置其背景资源为被按压的图标，并标记为已按下状态
                         v.setBackgroundResource(R.drawable.up)
-                        viewModel.selectedMarkerLiveData.value?.let {
-                            moveSelectedMarkerAndNode(it.position.latitude + 0.000001, it.position.longitude)
+                        viewModel.selectedNodeLiveData.value?.let {
+                            moveSelectedMarkerAndNode(it.latLng.latitude + 0.000001, it.latLng.longitude)
                         }
+//                        viewModel.selectedMarkerLiveData.value?.let {
+//                            moveSelectedMarkerAndNode(it.position.latitude + 0.000001, it.position.longitude)
+//                        }
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.performClick()
@@ -232,9 +235,12 @@ class MainActivity : AppCompatActivity(), OnSendPointListener {
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
                         v.setBackgroundResource(R.drawable.down)
-                        viewModel.selectedMarkerLiveData.value?.let {
-                            moveSelectedMarkerAndNode(it.position.latitude - 0.000001, it.position.longitude)
+                        viewModel.selectedNodeLiveData.value?.let {
+                            moveSelectedMarkerAndNode(it.latLng.latitude - 0.000001, it.latLng.longitude)
                         }
+//                        viewModel.selectedMarkerLiveData.value?.let {
+//                            moveSelectedMarkerAndNode(it.position.latitude - 0.000001, it.position.longitude)
+//                        }
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.performClick()
@@ -250,9 +256,12 @@ class MainActivity : AppCompatActivity(), OnSendPointListener {
                     MotionEvent.ACTION_DOWN -> {
                         // 按钮被按下，设置其背景资源为被按压的图标，并标记为已按下状态
                         v.setBackgroundResource(R.drawable.left)
-                        viewModel.selectedMarkerLiveData.value?.let {
-                            moveSelectedMarkerAndNode(it.position.latitude, it.position.longitude - 0.000001)
+                        viewModel.selectedNodeLiveData.value?.let {
+                            moveSelectedMarkerAndNode(it.latLng.latitude, it.latLng.longitude - 0.000001)
                         }
+//                        viewModel.selectedMarkerLiveData.value?.let {
+//                            moveSelectedMarkerAndNode(it.position.latitude, it.position.longitude - 0.000001)
+//                        }
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.performClick()
@@ -268,9 +277,12 @@ class MainActivity : AppCompatActivity(), OnSendPointListener {
                     MotionEvent.ACTION_DOWN -> {
                         // 按钮被按下，设置其背景资源为被按压的图标，并标记为已按下状态
                         v.setBackgroundResource(R.drawable.right)
-                        viewModel.selectedMarkerLiveData.value?.let {
-                            moveSelectedMarkerAndNode(it.position.latitude, it.position.longitude + 0.000001)
+                        viewModel.selectedNodeLiveData.value?.let {
+                            moveSelectedMarkerAndNode(it.latLng.latitude, it.latLng.longitude + 0.000001)
                         }
+//                        viewModel.selectedMarkerLiveData.value?.let {
+//                            moveSelectedMarkerAndNode(it.position.latitude, it.position.longitude + 0.000001)
+//                        }
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         v.performClick()
@@ -357,15 +369,14 @@ class MainActivity : AppCompatActivity(), OnSendPointListener {
     }
 
     private fun moveSelectedMarkerAndNode(latitude: Double, longitude: Double) {
-        viewModel.selectedMarkerLiveData.value?.position(LatLng(latitude, longitude))
+//        viewModel.selectedMarkerLiveData.value?.position(LatLng(latitude, longitude))
         viewModel.selectedNodeLiveData.value?.setLatLng(LatLng(latitude, longitude))
 
-        viewModel.selectedPolylineMarkerLiveData.value?.let { polylineMark->
-            viewModel.selectedPolylineNodeIndexLiveData.value?.let{index->
-                polylineMark.points[index] = LatLng(latitude, longitude)
-            }
-        }
-
+//        viewModel.selectedPolylineMarkerLiveData.value?.let { polylineMark->
+//            viewModel.selectedPolylineNodeIndexLiveData.value?.let{index->
+//                polylineMark.points[index] = LatLng(latitude, longitude)
+//            }
+//        }
         viewModel.refreshMapAnnotationLiveData.value = !viewModel.refreshMapAnnotationLiveData.value!!
     }
 

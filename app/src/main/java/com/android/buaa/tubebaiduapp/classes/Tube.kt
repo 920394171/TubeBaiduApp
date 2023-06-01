@@ -4,6 +4,7 @@ internal class Tube {
     var tubeName: String? = null
     var tubeTypeStr: String? = null
     var tubeMsg: String? = null
+    var tubeId: Int? = null
 
     fun clear() {
         tubeName = null
